@@ -2347,42 +2347,170 @@ function refreshResumeButton(){
   const btn = $('btn-resume'); if (btn) btn.hidden = !loadGameState();
 }
 
-const AI = {
+  const AI = {
   init(){
     const fab = $('ai-fab'), panel = $('ai-panel');
     if (!fab || !panel) return;
-    fab.addEventListener('click', ()=>{ panel.hidden = !panel.hidden; });
-    const sb = $('ai-send'); if (sb) sb.addEventListener('click', ()=>this.handleSend());
-    const inp = $('ai-input'); if (inp) inp.addEventListener('keydown', e=>{ if (e.key==='Enter') this.handleSend(); });
+    
+    // باز و بسته کردن پنل
+    fab.addEventListener('click', ()=>{
+      panel.hidden = !panel.hidden;
+      if (!panel.hidden){
+        const inp = $('ai-input');
+        if (inp) setTimeout(()=>inp.focus(), 120);
+      }
+    });
+    
+    // دکمه ارسال
+    const sb = $('ai-send'); 
+    if (sb) sb.addEventListener('click', ()=>this.handleSend());
+    
+    // زدن دکمه Enter
+    const inp = $('ai-input'); 
+    if (inp) inp.addEventListener('keydown', e=>{
+      if (e.key === 'Enter'){ e.preventDefault(); this.handleSend(); }
+    });
   },
+
   handleSend(){
-    const inp = $('ai-input'); if (!inp) return;
-    const text = inp.value.trim(); if (!text) return;
+    const inp = $('ai-input'); 
+    if (!inp) return;
+    const text = inp.value.trim(); 
+    if (!text) return;
+    
     inp.value = '';
     this.append('user', text);
-    this.append('bot', this.localReply(text));
+    this.appendTyping();
+    
+    setTimeout(()=>{
+      this.removeTyping();
+      this.append('bot', this.reply(text));
+    }, 350);
   },
+
   append(role, text){
-    const body = $('ai-body'); if (!body) return;
+    const body = $('ai-body'); 
+    if (!body) return;
     const div = document.createElement('div');
-    div.style.cssText = 'padding:.55rem .75rem;border-radius:12px;font-size:.81rem;line-height:1.75;align-self:'+(role==='user'?'flex-end':'flex-start')+';background:'+(role==='user'?'var(--panel)':'var(--surface)')+';color:'+(role==='user'?'var(--paper)':'var(--ink)');
+    div.style.cssText = 'padding:.55rem .75rem;border-radius:12px;font-size:.81rem;line-height:1.75;align-self:'+(role==='user'?'flex-end':'flex-start')+';background:'+(role==='user'?'var(--panel)':'var(--surface)')+';color:'+(role==='user'?'var(--paper)':'var(--ink)')+';white-space:pre-wrap';
     div.textContent = text;
     body.appendChild(div);
     body.scrollTop = body.scrollHeight;
   },
-  localReply(text){
-    if (!app.game) return '—';
+
+  appendTyping(){
+    const body = $('ai-body'); 
+    if (!body) return;
+    const div = document.createElement('div');
+    div.id = 'ai-typing';
+    div.style.cssText = 'padding:.55rem .75rem;border-radius:12px;font-size:.81rem;align-self:flex-start;background:var(--surface);color:var(--ink-soft);font-style:italic';
+    div.textContent = '...';
+    body.appendChild(div);
+    body.scrollTop = body.scrollHeight;
+  },
+  
+  removeTyping(){ 
+    const t = $('ai-typing'); 
+    if (t) t.remove(); 
+  },
+
+  reply(text){
+    const t = (text||'').toLowerCase();
+    const isFa = currentLang === 'fa';
+
+    // ۱) اگر بازی شروع نشده باشد
+    if (typeof app === 'undefined' || !app.game){
+      return isFa 
+        ? 'سلام! من مشاور تو هستم. برای اینکه بتوانم کمکت کنم، اول یک محصول انتخاب کن و روی «شروع فصل اول» بزن. بعد برگرد و بپرس — مثلاً «قیمت چطور باشد؟» یا «چرا فروش کم است؟».'
+        : 'Hi! First pick a product and click "Start Q1". Then ask me about pricing, ads, or profit.';
+    }
+
     const res = currentForecast();
-    const f = res.f, g = app.game;
-    if (/price|قیمت|السعر|价格/i.test(text)) return fmtMoney(app.decision.price) + ' / ' + fmtMoney(g.cfg.refPrice) + ' → ' + fmtMoney(f.unitProfit);
-    if (/ads|تبلیغ|قناة|广告/i.test(text)) return fmtMoney(f.spend.ads) + ' · CAC ' + fmtMoney(f.cac);
-    if (/cr|conversion|نرخ|تحويل|转化/i.test(text)) return pct(f.cr,2);
-    if (/cash|نقد|النقد|现金/i.test(text)) return fmtMoney(g.cash) + ' / ' + fmtMoney(f.spend.all);
-    return 'Q'+g.quarter+' · '+fmtMoney(f.profit)+' · '+pct(f.cr,2);
+    const f = res.f, g = app.game, d = app.decision;
+
+    // ۲) سلام
+    if (/سلام|hello|hi|مرحبا|你好/i.test(t)){
+      return isFa 
+        ? `سلام! الان فصل ${g.quarter} از ${g.maxQuarter}، نقدینگی ${fmtMoney(g.cash)} است.\nچه می‌خواهی بدانی؟ می‌توانی بپرسی:\n• «قیمت چطور باشد؟»\n• «چرا فروش کم است؟»\n• «چطور سود بیشتر کنم؟»\n• «تبلیغات را چطور بچینم؟»`
+        : `Hi! Q${g.quarter}/${g.maxQuarter}, cash ${fmtMoney(g.cash)}.\nAsk me: "How should I set my price?", "Why are my sales low?", "How do I increase profit?"`;
+    }
+
+    // ۳) قیمت
+    if (/قیمت|price|سعر|价格/i.test(t)){
+      const gap = ((d.price - g.cfg.refPrice) / g.cfg.refPrice * 100);
+      const dirFa = gap > 0 ? 'بالاتر' : 'پایین‌تر';
+      const verdict = Math.abs(gap) > 25 ? '⚠️ خیلی از تعادل دوری — فروش یا حاشیه را می‌سوزانی.'
+                    : Math.abs(gap) > 12 ? 'کمی دور از تعادل — قابل قبول است اما بهتر است نزدیک‌تر کنی.'
+                    : '✓ نزدیک تعادل — نقطهٔ خوبی است.';
+      return isFa ? `قیمت فعلی: ${fmtMoney(d.price)}\nتعادل بازار: ${fmtMoney(g.cfg.refPrice)}\nحاشیهٔ هر واحد: ${fmtMoney(f.unitProfit)}\n\nقیمتت ${Math.abs(gap).toFixed(0)}٪ ${dirFa} از تعادل است.\n${verdict}` 
+                  : `Current: ${fmtMoney(d.price)}\nRef: ${fmtMoney(g.cfg.refPrice)}\nMargin: ${fmtMoney(f.unitProfit)}`;
+    }
+
+    // ۴) چرا نفروختم / فروش کم
+    if (/نفروختم|فروش کم|چرا فروش|sales|بيع|销量|为什么.*卖/i.test(t)){
+      const reasons = [];
+      if (f.cr < 1) reasons.push('• نرخ تبدیل خیلی پایین است (' + pct(f.cr,2) + ') — محتوا و اعتماد را بالا ببر');
+      if (d.quality < 5) reasons.push('• کیفیت محتوا پایین است (' + d.quality + '/10) — حداقل ۶ یا ۷ برسان');
+      if (d.tools.length < 3) reasons.push('• ابزار اعتماد کمی داری (' + d.tools.length + ') — نظرات و ضمانت را فعال کن');
+      if (Math.abs(d.price - g.cfg.refPrice) / g.cfg.refPrice > 0.25) reasons.push('• قیمت خیلی از بازار فاصله دارد');
+      if (f.spend.ads < 2000) reasons.push('• بودجه تبلیغ خیلی کم است (' + fmtMoney(f.spend.ads) + ')');
+      
+      if (reasons.length === 0) reasons.push('• شاید رویداد این فصل سخت بوده — کمی صبر کن و هزینه‌ها را کم کن');
+      
+      return isFa ? 'دلایل احتمالی فروش کم:\n' + reasons.join('\n') + '\n\nپیشنهاد: اول نرخ تبدیل را با بهبود محتوا بالا ببر.'
+                  : 'Possible reasons:\n' + reasons.join('\n');
+    }
+
+    // ۵) سود
+    if (/سود|profit|ربح|利润/i.test(t)){
+      return isFa ? `سود پیش‌بینی: ${fmtMoney(f.profit)}\nدرآمد: ${fmtMoney(f.revenue)}\nهزینه کل: ${fmtMoney(f.spend.all)}\n\n${f.profit<0?'⚠️ زیان‌ده — قیمت را بالا ببر یا هزینه را کم کن':'✓ سود مثبت است.'}` 
+                  : `Predicted profit: ${fmtMoney(f.profit)}`;
+    }
+
+    // ۶) تبلیغات
+    if (/تبلیغ|ads|channel|قناة|广告/i.test(t)){
+      const chs = CH_KEYS.map(k=>({k, s:d.spend[k]||0})).filter(x=>x.s>0);
+      if (chs.length === 0) return isFa ? 'هیچ بودجه‌ای برای تبلیغ تعیین نکردی. حداقل روی باشگاه مشتریان و تلگرام سرمایه‌گذاری کن.' : 'No ad budget.';
+      const sorted = chs.sort((a,b)=>b.s-a.s);
+      const list = sorted.map(x => '• ' + T('ch.'+x.k) + ': ' + fmtMoney(x.s)).join('\n');
+      return isFa ? 'ترکیب فعلی:\n' + list + '\n\nCAC: ' + fmtMoney(f.cac) : list;
+    }
+
+    // ۷) نرخ تبدیل
+    if (/cr|conversion|نرخ تبدیل|تحويل|转化/i.test(t)){
+      const lvl = f.cr < 1 ? '❌ بحرانی' : f.cr < 2 ? '⚠️ پایین' : f.cr < 3 ? '✓ قابل قبول' : '🌟 عالی';
+      return isFa ? `${lvl} — نرخ تبدیل فعلی: ${pct(f.cr,2)}\n\nبرای افزایش: محتوا را بالاتر ببر، ابزار اعتماد اضافه کن، قیمت را متعادل کن.` : `CR: ${pct(f.cr,2)}`;
+    }
+
+    // ۸) اعتماد
+    if (/اعتماد|trust|tool|أداة|工具/i.test(t)){
+      const active = d.tools.map(k=>T('tool.'+k)).join('، ') || 'هیچ';
+      return isFa ? `ابزارهای فعال: ${active}\n${d.tools.length < 3 ? '⚠️ کم است — چند ابزار دیگر اضافه کن' : '✓ ترکیب خوبی داری'}` : `Tools: ${active}`;
+    }
+
+    // ۹) نقدینگی
+    if (/نقدینگی|cash|النقد|现金/i.test(t)){
+      return isFa ? `نقدینگی: ${fmtMoney(g.cash)}\nهزینه این فصل: ${fmtMoney(f.spend.all)}\n${g.cash < f.spend.all ? '⛔ نقدینگی کافی نیست!' : '✓ تا چند فصل دوام می‌آوری'}` : `Cash: ${fmtMoney(g.cash)}`;
+    }
+
+    // ۱۰) رویداد
+    if (/رویداد|event|حدث|事件/i.test(t)){
+      if (!g.event) return isFa ? 'این فصل رویداد خاصی ندارد.' : 'No event.';
+      return (isFa ? 'رویداد فصل: ' : 'Event: ') + (g.event['title_'+currentLang] || g.event.title);
+    }
+
+    // ۱۱) تحلیل پیش‌فرض (اگر سوال نامفهوم بود)
+    const issues = [];
+    if (f.cr < 1.5) issues.push('• نرخ تبدیل پایین است');
+    if (f.cac > f.unitProfit * 0.8 && f.unitProfit > 0) issues.push('• هزینه جذب مشتری (CAC) بالاست');
+    if (d.quality < 5) issues.push('• محتوا ضعیف است');
+    if (issues.length === 0) issues.push('• وضعیت کلی خوب است، همین مسیر را ادامه بده');
+    
+    return isFa ? `📊 تحلیل فصل ${g.quarter}:\nسود: ${fmtMoney(f.profit)}\nنرخ تبدیل: ${pct(f.cr,2)}\n\n${issues.join('\n')}` 
+                : `Q${g.quarter} analysis: Profit ${fmtMoney(f.profit)}, CR ${pct(f.cr,2)}`;
   }
 };
-
-function playSound(type){
+  function playSound(type){
   try {
     const ctx = new (window.AudioContext||window.webkitAudioContext)();
     const osc = ctx.createOscillator(), gain = ctx.createGain();
