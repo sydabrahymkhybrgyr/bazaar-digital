@@ -524,7 +524,9 @@ body.is-guest #ai-fab, body.is-guest #ai-panel { display: none !important; }
 .ai-fab-icon { font-size: 1.3rem; }
 .ai-fab-label { display: none; }
 @media (min-width: 480px) { .ai-fab-label { display: inline; } }
-
+.ai-panel[hidden] {
+  display: none !important;
+}
 .ai-panel {
   position: fixed; bottom: 84px; left: 20px;
   width: min(380px, calc(100vw - 40px));
