@@ -1445,7 +1445,7 @@ CAC = (تبلیغ + محتوا + ابزار + تحقیق) ÷ تعداد فروش
       <input type="checkbox" id="ai-online-toggle">
       <span>آنلاین</span>
     </label>
-    <button class="xbtn" id="ai-close" type="button" aria-label="بستن">✕</button>
+    <button class="xbtn" id="ai-close" type="button" aria-label="بستن" onclick="document.getElementById('ai-panel').hidden = true">✕</button>
   </div>
   <div class="ai-body" id="ai-body">
     <div class="ai-msg ai-msg-bot">
@@ -2565,6 +2565,10 @@ const Auth = {
     const hb = document.getElementById('handbook');
     if (hb) hb.hidden = (which === 'play' || which === 'admin' || which === 'auth');
     document.body.classList.toggle('is-guest', which === 'auth');
+    const aiFab = document.getElementById('ai-fab');
+const aiPanel = document.getElementById('ai-panel');
+if (aiFab) aiFab.style.display = (which === 'auth') ? 'none' : 'flex';
+if (aiPanel && which === 'auth') aiPanel.hidden = true;
     window.scrollTo({ top: 0, behavior: 'auto' });
   },
 
