@@ -601,7 +601,48 @@ body.dark-mode .tab[aria-selected="true"] { background: #1B3A52; color: #F2EAD8;
 .badge-name { font-weight: 700; font-size: .9rem; color: var(--ink); }
 .badge-desc { font-size: .72rem; color: var(--ink-soft); line-height: 1.4; }
 body.dark-mode .badge-item { background: #1B3A52; border-color: #254A64; }
-body.dark-mode .badge-name { color: #F2EAD8; }</style>
+body.dark-mode .badge-name { color: #F2EAD8; }
+/* ═════ کارت ویدیو معرفی ═════ */
+.video-card {
+  background: linear-gradient(145deg, var(--surface), var(--surface-2));
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: .8rem 1rem;
+  cursor: pointer;
+  transition: transform .2s, box-shadow .2s, border-color .2s;
+  box-shadow: var(--shadow);
+}
+.video-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--turq);
+  box-shadow: var(--shadow-lift);
+}
+.video-thumb {
+  width: 60px; height: 60px;
+  border-radius: 12px;
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+  display: grid; place-items: center;
+  color: #fff; font-size: 1.8rem;
+  flex: none;
+  box-shadow: 0 4px 10px rgba(220, 39, 67, 0.3);
+}
+.video-info { flex: 1; min-width: 0; }
+.video-info h3 { font-size: 1rem; margin-bottom: .2rem; color: var(--ink); }
+.video-info p { font-size: .75rem; color: var(--ink-soft); margin: 0; line-height: 1.5; }
+.video-arrow { color: var(--turq); font-size: 1.2rem; font-weight: bold; }
+
+/* مدال ویدیو */
+#video-modal .modal-in { background: #000; border: none; }
+#video-modal .modal-head { background: #111; color: #fff; border-bottom: 1px solid #333; }
+#video-modal .modal-head h2 { color: #fff; font-size: 1rem; }
+#video-modal .xbtn { background: #333; color: #fff; border-color: #555; }
+#video-modal .xbtn:hover { background: #555; }
+#video-modal iframe { width: 100%; height: 100%; border: none; }
+</style>
 </head>
 <body>
 <a class="sr" href="#main">رفتن به محتوای اصلی</a>
@@ -933,6 +974,15 @@ body.dark-mode .badge-name { color: #F2EAD8; }</style>
           </div>
           <div class="pickgrid" id="scenario-grid" role="group" aria-label="انتخاب محصول"></div>
         </div>
+        <!-- ═══ کارت ویدیو معرفی ═══ -->
+<div class="video-card reveal" onclick="document.getElementById('video-modal').hidden = false;">
+  <div class="video-thumb">▶</div>
+  <div class="video-info">
+    <h3>ویدیوی معرفی بازی</h3>
+    <p>با یک کلیک تماشا کنید یا مستقیم در اینستاگرام ببینید.</p>
+  </div>
+  <div class="video-arrow">←</div>
+</div>
 
         <div class="card reveal">
           <div class="card-head"><div><span class="eyebrow">گام ۲</span><h2>برندت را بساز</h2></div><span class="sub" id="start-mode">حالت: مسابقهٔ کلاسی</span></div>
@@ -1424,6 +1474,24 @@ CAC = (تبلیغ + محتوا + ابزار + تحقیق) ÷ تعداد فروش
       </div>
     </div>
   </div>
+<!-- ═══ مدال پخش ویدیو ═══ -->
+<div class="modal" id="video-modal" hidden>
+  <div class="modal-in" style="max-width: 420px; width: 100%; height: 80vh; display: flex; flex-direction: column; border-radius: 18px; overflow: hidden;">
+    <div class="modal-head" style="padding: .6rem 1rem;">
+      <h2 style="font-family: Vazirmatn; font-weight: 600;">ویدیوی معرفی</h2>
+      <button class="xbtn" type="button" onclick="document.getElementById('video-modal').hidden = true">✕</button>
+    </div>
+    <div style="flex: 1; background: #000; position: relative; overflow: hidden;">
+      <iframe src="https://www.instagram.com/reel/Dfm5FjDBRTn/embed" allowtransparency="true" allowfullscreen="true" scrolling="no" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
+    </div>
+    <div style="padding: .8rem; background: var(--surface); text-align: center;">
+      <a href="https://www.instagram.com/reel/Dfm5FjDBRTn/" target="_blank" rel="noopener noreferrer" class="btn btn--saffron btn--sm" style="width: 100%; display: flex; justify-content: center; gap: .5rem;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+        مشاهده مستقیم در اینستاگرام
+      </a>
+    </div>
+  </div>
+</div>
 </div> <div class="toast" id="toast" aria-live="polite"><span></span></div> <!-- ═══ مشاور هوشمند ═══ -->
 <button id="ai-fab" class="ai-fab no-print" type="button" aria-label="مشاور هوشمند">
   <span class="ai-fab-icon">🤖</span>
